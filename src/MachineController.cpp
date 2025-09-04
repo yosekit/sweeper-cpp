@@ -12,6 +12,10 @@ const int KEY_E = 'e';
 const int KEY_Q = 'q';
 const int KEY_R = 'r';
 const int KEY_ESC = FL_Escape;
+const int KEY_UP = FL_Up;
+const int KEY_DOWN = FL_Down;
+const int KEY_LEFT = FL_Left;
+const int KEY_RIGHT = FL_Right;
 
 MachineController::MachineController(std::shared_ptr<Sweeper> machine) 
     : machine(machine), inputSystem(InputSystem::getInstance()) {
@@ -32,10 +36,10 @@ void MachineController::setupInputBindings() {
     maintenanceAction = inputSystem.createAction("Maintenance", [this](bool pressed) { onMaintenance(pressed); });
     
     // Привязываем клавиши
-    inputSystem.bindKey(KEY_W, "MoveForward");
-    inputSystem.bindKey(KEY_S, "MoveBackward");
-    inputSystem.bindKey(KEY_A, "TurnLeft");
-    inputSystem.bindKey(KEY_D, "TurnRight");
+    inputSystem.bindKey(KEY_UP, "MoveForward");
+    inputSystem.bindKey(KEY_DOWN, "MoveBackward");
+    inputSystem.bindKey(KEY_LEFT, "TurnLeft");
+    inputSystem.bindKey(KEY_RIGHT, "TurnRight");
     inputSystem.bindKey(KEY_E, "StartUnloading");
     inputSystem.bindKey(KEY_Q, "Maintenance");
     inputSystem.bindKey(KEY_ESC, "EmergencyStop");

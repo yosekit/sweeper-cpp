@@ -4,8 +4,8 @@
 #include <iomanip>
 
 MachineRenderer::MachineRenderer(std::shared_ptr<Sweeper> machine) 
-    : machine(machine), mainWindow(nullptr), machineVisual(nullptr), 
-      statusLabel(nullptr), fuelLabel(nullptr), harvestLabel(nullptr) {
+    : machine(machine), mainWindow(nullptr), sweeperWidget(nullptr), 
+      statusLabel(nullptr), fuelLabel(nullptr) {
     machine->setRenderer(std::shared_ptr<MachineRenderer>(this));
 }
 
@@ -29,20 +29,18 @@ void MachineRenderer::createUI(int width, int height) {
     machineGroup = new Fl_Group(50, 50, 300, 300);
     machineGroup->box(FL_FLAT_BOX);
     machineGroup->color(FL_WHITE);
-    
+    machineGroup->begin();
     createMachineVisual();
-    createStatusPanel();
-    
     machineGroup->end();
+
+    createStatusPanel();
+
     mainWindow->end();
 }
 
-void MachineRenderer::createMachineVisual() {  
-    machineVisual = new Fl_Box(175, 175, 50, 50);
-    machineVisual->box(FL_OVAL_BOX);
-    machineVisual->color(FL_BLUE);
-    machineVisual->labelcolor(FL_WHITE);
-    machineVisual->labelsize(12);
+void MachineRenderer::createMachineVisual() {
+    sweeperWidget = new SweeperWidget(175, 175, 50, 50);
+    sweeperWidget->setColor(FL_BLUE);
 }
 
 void MachineRenderer::createStatusPanel() {
@@ -51,9 +49,6 @@ void MachineRenderer::createStatusPanel() {
     
     fuelLabel = new Fl_Box(400, 90, 200, 30, "Fuel: 100%");
     fuelLabel->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
-    
-    harvestLabel = new Fl_Box(400, 130, 200, 30, "Harvested: 0 kg");
-    harvestLabel->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 }
 
 void MachineRenderer::update() {
@@ -64,7 +59,7 @@ void MachineRenderer::update() {
 }
 
 void MachineRenderer::updateMachineVisual() {
-    if (!machineVisual) return;
+    if (!sweeperWidget) return;
 
         // Обновляем позицию машины
     int centerX = (machineGroup->w() - 50) / 2;
@@ -73,13 +68,10 @@ void MachineRenderer::updateMachineVisual() {
     int posX = centerX + machine->getPositionX() * 10; // Масштабируем для видимости
     int posY = centerY + machine->getPositionY() * 10;
 
-    // std::cout << "Position: " << posX << ", " << posY << std::endl;
+    sweeperWidget->position(posX, posY);
+    sweeperWidget->setRotation(machine->getRotation());
 
-    machineVisual->position(posX, posY);
-    machineVisual->label(std::to_string(machine->getRotation()).c_str());
-
-    machineVisual->color(getStateColor(machine->getCurrentState()));
-    machineVisual->redraw();
+    sweeperWidget->setColor(getStateColor(machine->getCurrentState()));
 }
 
 void MachineRenderer::refreshUI() {

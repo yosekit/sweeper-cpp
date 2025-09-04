@@ -4,6 +4,7 @@
 #pragma once
 
 #include "Sweeper.h"
+#include "SweeperWidget.h"
 #include "MainWindow.h"
 
 #include <FL/Fl_Window.H>
@@ -32,10 +33,11 @@ private:
     
     MainWindow* mainWindow;
     Fl_Group* machineGroup;
-    Fl_Box* machineVisual;
+
+    SweeperWidget* sweeperWidget;
+
     Fl_Box* statusLabel;
     Fl_Box* fuelLabel;
-    Fl_Box* harvestLabel;
     
     void createMachineVisual();
     void createStatusPanel();

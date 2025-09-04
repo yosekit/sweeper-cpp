@@ -27,6 +27,7 @@ set(SOURCES
     src/Sweeper.cpp
     src/MachineController.cpp
     src/MachineRenderer.cpp
+    src/SweeperWidget.cpp
     src/InputSystem.cpp
     src/InputAction.cpp
 )
