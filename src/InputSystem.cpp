@@ -13,6 +13,13 @@ InputAction* InputSystem::createAction(const std::string& name) {
     }
     return actions[name].get();
 }
+InputAction* InputSystem::createAction(const std::string& name, const Callback& callback) {
+    auto action = createAction(name);
+    if (action && callback) {
+        action->addCallback(callback);
+    }
+    return action;
+}
 
 InputAction* InputSystem::getAction(const std::string& name) const {
     auto it = actions.find(name);
@@ -22,21 +29,18 @@ InputAction* InputSystem::getAction(const std::string& name) const {
     return nullptr;
 }
 
-void InputSystem::bindKey(int fltkKey, const std::string& actionName, bool triggerOnPress) {
-    keyBindings[fltkKey] = {actionName, triggerOnPress};
-    std::cout << "Bound key " << fltkKey << " to action '" << actionName << "'" << std::endl;
+void InputSystem::bindKey(int fltkKey, const std::string& actionName) {
+    keyBindings[fltkKey] = actionName;
 }
 
 void InputSystem::processKeyEvent(int key, bool pressed) {
     auto it = keyBindings.find(key);
     if (it != keyBindings.end()) {
-        const auto& [actionName, triggerOnPress] = it->second;
-        
-        if (pressed == triggerOnPress) {
-            InputAction* action = getAction(actionName);
-            if (action) {
-                action->trigger(pressed ? 1.0f : 0.0f);
-            }
+        const std::string& actionName = it->second;
+    
+        InputAction* action = getAction(actionName);
+        if (action) {
+            action->invoke(pressed);
         }
     }
 }

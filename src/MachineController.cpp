@@ -13,8 +13,8 @@ const int KEY_Q = 'q';
 const int KEY_R = 'r';
 const int KEY_ESC = FL_Escape;
 
-MachineController::MachineController(std::shared_ptr<HarvestingMachine> machine) 
-    : machine(machine) {
+MachineController::MachineController(std::shared_ptr<Sweeper> machine) 
+    : machine(machine), inputSystem(InputSystem::getInstance()) {
     machine->setController(std::shared_ptr<MachineController>(this));
     setupInputBindings();
 }
@@ -22,133 +22,84 @@ MachineController::MachineController(std::shared_ptr<HarvestingMachine> machine)
 MachineController::~MachineController() = default;
 
 void MachineController::setupInputBindings() {
-    InputSystem& inputSystem = InputSystem::getInstance();
-    
     // Создаем actions
-    moveForwardAction = inputSystem.createAction("MoveForward");
-    moveBackwardAction = inputSystem.createAction("MoveBackward");
-    turnLeftAction = inputSystem.createAction("TurnLeft");
-    turnRightAction = inputSystem.createAction("TurnRight");
-    startHarvestingAction = inputSystem.createAction("StartHarvesting");
-    stopHarvestingAction = inputSystem.createAction("StopHarvesting");
-    startUnloadingAction = inputSystem.createAction("StartUnloading");
-    emergencyStopAction = inputSystem.createAction("EmergencyStop");
-    maintenanceAction = inputSystem.createAction("Maintenance");
+    moveForwardAction = inputSystem.createAction("MoveForward", [this](bool pressed) { onMoveForward(pressed); });
+    moveBackwardAction = inputSystem.createAction("MoveBackward", [this](bool pressed) { onMoveBackward(pressed); });
+    turnLeftAction = inputSystem.createAction("TurnLeft", [this](bool pressed) { onTurnLeft(pressed); });
+    turnRightAction = inputSystem.createAction("TurnRight", [this](bool pressed) { onTurnRight(pressed); });
+    startUnloadingAction = inputSystem.createAction("StartUnloading", [this](bool pressed) { onStartUnloading(pressed); });
+    emergencyStopAction = inputSystem.createAction("EmergencyStop", [this](bool pressed) { onEmergencyStop(pressed); });
+    maintenanceAction = inputSystem.createAction("Maintenance", [this](bool pressed) { onMaintenance(pressed); });
     
     // Привязываем клавиши
     inputSystem.bindKey(KEY_W, "MoveForward");
     inputSystem.bindKey(KEY_S, "MoveBackward");
     inputSystem.bindKey(KEY_A, "TurnLeft");
     inputSystem.bindKey(KEY_D, "TurnRight");
-    inputSystem.bindKey(KEY_SPACE, "StartHarvesting", true); // На нажатие
-    inputSystem.bindKey(KEY_SPACE, "StopHarvesting", false); // На отпускание
     inputSystem.bindKey(KEY_E, "StartUnloading");
     inputSystem.bindKey(KEY_Q, "Maintenance");
     inputSystem.bindKey(KEY_ESC, "EmergencyStop");
     inputSystem.bindKey(FL_CTRL + 'r', "EmergencyStop"); // Ctrl+R
-    
-    // Подписываемся на events
-    moveForwardAction->addCallback([this](float value) { onMoveForward(value); });
-    moveBackwardAction->addCallback([this](float value) { onMoveBackward(value); });
-    turnLeftAction->addCallback([this](float value) { onTurnLeft(value); });
-    turnRightAction->addCallback([this](float value) { onTurnRight(value); });
-    startHarvestingAction->addCallback([this](float value) { onStartHarvesting(value); });
-    stopHarvestingAction->addCallback([this](float value) { onStopHarvesting(value); });
-    startUnloadingAction->addCallback([this](float value) { onStartUnloading(value); });
-    emergencyStopAction->addCallback([this](float value) { onEmergencyStop(value); });
-    maintenanceAction->addCallback([this](float value) { onMaintenance(value); });
 }
 
-int MachineController::handleKeyEvent(int key) {
-    std::cout << "Key pressed: " << key << std::endl;
+void MachineController::handleKeyPress(int key, bool pressed) {
+    keyStates[key] = pressed;
+    
+    if (pressed) {
+        keyPressTimes[key] = std::chrono::steady_clock::now();
+        std::cout << "Key pressed: " << key << std::endl;
+        
+        inputSystem.processKeyEvent(key, pressed);
+    } else {
+        auto pressTime = std::chrono::steady_clock::now() - keyPressTimes[key];
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(pressTime).count();
+        std::cout << "Key released: " << key << " (held for " << duration << "ms)" << std::endl;
+        keyPressTimes.erase(key);
 
-    switch (key) {
-        case 'w': case 'W': case FL_Up:
-            onMoveForward(1.0);
-            return 1;
-        case 's': case 'S': case FL_Down:
-            onMoveBackward(1.0);
-            return 1;
-        case 'a': case 'A': case FL_Left:
-            onTurnLeft(1.0);
-            return 1;
-        case 'd': case 'D': case FL_Right:
-            onTurnRight(1.0);
-            return 1;
-        case ' ': 
-            if (machine->getCurrentState() == MachineState::HARVESTING) {
-                onStopHarvesting(0);
-            } else {
-                onStartHarvesting(0);
-            }
-            return 1;
-        case 'u': case 'U':
-            onStartUnloading(0);
-            return 1;
-        case 'e': case 'E':
-            onEmergencyStop(0);
-            return 1;
-        case 'm': case 'M':
-            onMaintenance(0);
-            return 1;
-        case FL_Escape:
-            exit(0);
-            return 1;
+        inputSystem.processKeyEvent(key, pressed);
+        keyStates.erase(key);
     }
-    return 0;
+}
+
+void MachineController::resetKeys() {
+    // Сбрасываем все зажатые клавиши
+    for (auto& [key, pressed] : keyStates) {
+        if (pressed) {
+            pressed = false;
+            std::cout << "Key reset due to focus loss: " << key << std::endl;
+        }
+    }
+    keyPressTimes.clear();
+}
+
+bool MachineController::isKeyPressed(int key) const {
+    auto it = keyStates.find(key);
+    return it != keyStates.end() && it->second;
+}
+
+std::vector<int> MachineController::getPressedKeys() const {
+    std::vector<int> pressedKeys;
+    for (const auto& [key, pressed] : keyStates) {
+        if (pressed) {
+            pressedKeys.push_back(key);
+        }
+    }
+    return pressedKeys;
 }
 
 // Обработчики действий
-void MachineController::onMoveForward(float value) {
-    if (value > 0.5f) {
-        machine->moveForward();
-    }
+void MachineController::onMoveForward(bool pressed) {
+    machine->setMovementDirection(MovementDirection::FORWARD, pressed);
 }
 
-void MachineController::onMoveBackward(float value) {
-    if (value > 0.5f) {
-        machine->moveBackward();
-    }
+void MachineController::onMoveBackward(bool pressed) {
+    machine->setMovementDirection(MovementDirection::BACKWARD, pressed);
 }
 
-void MachineController::onTurnLeft(float value) {
-    if (value > 0.5f) {
-        machine->turnLeft();
-    }
+void MachineController::onTurnLeft(bool pressed) {
+    machine->setMovementDirection(MovementDirection::TURNING_LEFT, pressed);
 }
 
-void MachineController::onTurnRight(float value) {
-    if (value > 0.5f) {
-        machine->turnRight();
-    }
-}
-
-void MachineController::onStartHarvesting(float value) {
-    if (value > 0.5f) {
-        machine->startHarvesting();
-    }
-}
-
-void MachineController::onStopHarvesting(float value) {
-    if (value < 0.5f) {
-        machine->stopHarvesting();
-    }
-}
-
-void MachineController::onStartUnloading(float value) {
-    if (value > 0.5f) {
-        machine->startUnloading();
-    }
-}
-
-void MachineController::onEmergencyStop(float value) {
-    if (value > 0.5f) {
-        machine->emergencyStop();
-    }
-}
-
-void MachineController::onMaintenance(float value) {
-    if (value > 0.5f) {
-        machine->performMaintenance();
-    }
+void MachineController::onTurnRight(bool pressed) {
+    machine->setMovementDirection(MovementDirection::TURNING_RIGHT, pressed);
 }

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(HarverstingMachine)
+project(Sweeper)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -24,10 +24,9 @@ set(SOURCES
     src/main.cpp
     src/Application.cpp
     src/MainWindow.cpp
-    src/HarvestingMachine.cpp
+    src/Sweeper.cpp
     src/MachineController.cpp
     src/MachineRenderer.cpp
-    src/HarvestingStateMachine.cpp
     src/InputSystem.cpp
     src/InputAction.cpp
 )

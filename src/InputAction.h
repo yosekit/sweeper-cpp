@@ -14,7 +14,7 @@ public:
     InputAction(const std::string& name);
     
     void addCallback(const Callback& callback);
-    void trigger(float value = 1.0f);
+    void invoke(bool pressed);
     
     const std::string& getName() const { return name; }
 

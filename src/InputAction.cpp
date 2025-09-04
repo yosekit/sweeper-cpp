@@ -8,8 +8,8 @@ void InputAction::addCallback(const Callback& callback) {
     callbacks.push_back(callback);
 }
 
-void InputAction::trigger(float value) {
+void InputAction::invoke(bool pressed) {
     for (auto& callback : callbacks) {
-        callback(value);
+        callback(pressed);
     }
 }

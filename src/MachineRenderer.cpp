@@ -3,7 +3,7 @@
 #include <sstream>
 #include <iomanip>
 
-MachineRenderer::MachineRenderer(std::shared_ptr<HarvestingMachine> machine) 
+MachineRenderer::MachineRenderer(std::shared_ptr<Sweeper> machine) 
     : machine(machine), mainWindow(nullptr), machineVisual(nullptr), 
       statusLabel(nullptr), fuelLabel(nullptr), harvestLabel(nullptr) {
     machine->setRenderer(std::shared_ptr<MachineRenderer>(this));
@@ -14,8 +14,14 @@ MachineRenderer::~MachineRenderer() {
 }
 
 void MachineRenderer::createUI(int width, int height) {
-    mainWindow = new MainWindow(width, height, "Harvesting Machine Simulator");
-    mainWindow->setController(machine->getController()); // TODO
+    mainWindow = new MainWindow(width, height, "Sweeper Simulator");
+
+    mainWindow->onKeyDown([this](int key) {
+        machine->getController()->handleKeyPress(key, true);
+    });
+    mainWindow->onKeyUp([this](int key) {
+        machine->getController()->handleKeyPress(key, false);
+    });
 
     mainWindow->begin();
     
@@ -50,21 +56,38 @@ void MachineRenderer::createStatusPanel() {
     harvestLabel->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
 }
 
-void MachineRenderer::update(float posX, float posY, float rotation) {
-    if (machineVisual) {
-        machineVisual->position(150 + posX, 150 + posY);
-        // Здесь можно добавить вращение и другую визуализацию
-    }
+void MachineRenderer::update() {
+    if (!machine || !mainWindow) return;
+
+    updateMachineVisual();
     refreshUI();
+}
+
+void MachineRenderer::updateMachineVisual() {
+    if (!machineVisual) return;
+
+        // Обновляем позицию машины
+    int centerX = (machineGroup->w() - 50) / 2;
+    int centerY = (machineGroup->h() - 50) / 2;
+
+    int posX = centerX + machine->getPositionX() * 10; // Масштабируем для видимости
+    int posY = centerY + machine->getPositionY() * 10;
+
+    // std::cout << "Position: " << posX << ", " << posY << std::endl;
+
+    machineVisual->position(posX, posY);
+    machineVisual->label(std::to_string(machine->getRotation()).c_str());
+
+    machineVisual->color(getStateColor(machine->getCurrentState()));
+    machineVisual->redraw();
 }
 
 void MachineRenderer::refreshUI() {
     if (!machine || !statusLabel) return;
     
     // Обновляем статус
-    MachineState state = machine->getCurrentState();
     std::stringstream status;
-    status << "Status: " << machineStateToString(state);
+    status << "Status: " << machine->getCurrentStateAsString();
     statusLabel->copy_label(status.str().c_str());
     statusLabel->labelcolor(FL_BLACK);
     
@@ -83,35 +106,21 @@ void MachineRenderer::refreshUI() {
         fuelLabel->labelcolor(FL_DARK_GREEN);
     }
     
-    // Обновляем урожай
-    std::stringstream harvest;
-    harvest << "Harvested: " << std::fixed << std::setprecision(1) 
-            << machine->getHarvestedAmount() << " kg";
-    harvestLabel->copy_label(harvest.str().c_str());
-    
-    // Обновляем цвет машины в зависимости от состояния
-    if (machineVisual) {
-        std::string color = getStateColor(state);
-        if (color == "red") machineVisual->color(FL_RED);
-        else if (color == "green") machineVisual->color(FL_GREEN);
-        else if (color == "blue") machineVisual->color(FL_BLUE);
-        else if (color == "yellow") machineVisual->color(FL_YELLOW);
-        else machineVisual->color(FL_BLUE);
-        
-        machineVisual->redraw();
-    }
-    
     mainWindow->redraw();
 }
 
-std::string MachineRenderer::getStateColor(MachineState state) const {
+Fl_Color MachineRenderer::getStateColor(SweeperState state) const {
     switch (state) {
-        case MachineState::IDLE: return "gray";
-        case MachineState::MOVING_FORWARD: return "green";
-        case MachineState::MOVING_BACKWARD: return "yellow";
-        case MachineState::HARVESTING: return "blue";
-        case MachineState::UNLOADING: return "cyan";
-        case MachineState::BROKEN: return "red";
-        default: return "white";
+        case SweeperState::IDLE: return FL_BLACK;
+        case SweeperState::MOVING: {
+            MovementDirection dir = machine->getMovementDirection();
+            if (hasDirection(dir, MovementDirection::FORWARD))
+                return FL_GREEN;
+            if (hasDirection(dir, MovementDirection::BACKWARD))
+                return FL_RED;
+        };
+        case SweeperState::UNLOADING: return FL_CYAN;
+        case SweeperState::BROKEN: return FL_YELLOW;
+        default: return FL_WHITE;
     }
 }

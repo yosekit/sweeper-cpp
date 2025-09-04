@@ -2,7 +2,7 @@
 
 // #include <iostream>
 
-#include "HarvestingMachine.h"
+#include "Sweeper.h"
 #include "MachineController.h"
 #include "MachineRenderer.h"
 #include <memory>
@@ -17,7 +17,7 @@ int main(int argc, char **argv) {
     // return app->run();
 
     // Создаем машину
-    auto machine = std::make_shared<HarvestingMachine>();
+    auto machine = std::make_shared<Sweeper>();
     
     // Создаем и настраиваем контроллер
     auto controller = std::make_shared<MachineController>(machine);
@@ -38,7 +38,8 @@ int main(int argc, char **argv) {
     // Главный цикл симуляции
     while (renderer->getWindow()->shown()) {
         Fl::check(); // Обрабатываем события FLTK
-        
+    
+
         // Обновляем машину
         machine->update(0.016f); // ~60 FPS
         
