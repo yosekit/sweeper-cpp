@@ -11,7 +11,7 @@
 // Аналог Input System из Unity
 class InputSystem {
 public:
-    using Callback = std::function<void(float)>;
+    using Callback = std::function<void(bool)>;
 
     static InputSystem& getInstance();
     

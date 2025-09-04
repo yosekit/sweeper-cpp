@@ -22,7 +22,7 @@ public:
 
     void setupInputBindings();
     
-    void handleMovementInput();
+    void onStartStop(bool pressed);
     // Обработчики для InputActions
     void onMoveForward(bool pressed);
     void onMoveBackward(bool pressed);
@@ -46,15 +46,6 @@ private:
     std::unordered_map<int, std::chrono::steady_clock::time_point> keyPressTimes;
 
     InputSystem& inputSystem;
-
-    // Input actions
-    InputAction* moveForwardAction;
-    InputAction* moveBackwardAction;
-    InputAction* turnLeftAction;
-    InputAction* turnRightAction;
-    InputAction* startUnloadingAction;
-    InputAction* emergencyStopAction;
-    InputAction* maintenanceAction;
 };
 
 #endif

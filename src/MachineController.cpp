@@ -27,19 +27,23 @@ MachineController::~MachineController() = default;
 
 void MachineController::setupInputBindings() {
     // Создаем actions
-    moveForwardAction = inputSystem.createAction("MoveForward", [this](bool pressed) { onMoveForward(pressed); });
-    moveBackwardAction = inputSystem.createAction("MoveBackward", [this](bool pressed) { onMoveBackward(pressed); });
-    turnLeftAction = inputSystem.createAction("TurnLeft", [this](bool pressed) { onTurnLeft(pressed); });
-    turnRightAction = inputSystem.createAction("TurnRight", [this](bool pressed) { onTurnRight(pressed); });
-    startUnloadingAction = inputSystem.createAction("StartUnloading", [this](bool pressed) { onStartUnloading(pressed); });
-    emergencyStopAction = inputSystem.createAction("EmergencyStop", [this](bool pressed) { onEmergencyStop(pressed); });
-    maintenanceAction = inputSystem.createAction("Maintenance", [this](bool pressed) { onMaintenance(pressed); });
+    inputSystem.createAction("StartStop", [this](bool pressed) { onStartStop(pressed); });
+    inputSystem.createAction("MoveForward", [this](bool pressed) { onMoveForward(pressed); });
+    inputSystem.createAction("MoveBackward", [this](bool pressed) { onMoveBackward(pressed); });
+    inputSystem.createAction("TurnLeft", [this](bool pressed) { onTurnLeft(pressed); });
+    inputSystem.createAction("TurnRight", [this](bool pressed) { onTurnRight(pressed); });
+    inputSystem.createAction("StartUnloading", [this](bool pressed) { onStartUnloading(pressed); });
+    inputSystem.createAction("EmergencyStop", [this](bool pressed) { onEmergencyStop(pressed); });
+    inputSystem.createAction("Maintenance", [this](bool pressed) { onMaintenance(pressed); });
     
     // Привязываем клавиши
+    inputSystem.bindKey(KEY_S, "StartStop");
+
     inputSystem.bindKey(KEY_UP, "MoveForward");
     inputSystem.bindKey(KEY_DOWN, "MoveBackward");
     inputSystem.bindKey(KEY_LEFT, "TurnLeft");
     inputSystem.bindKey(KEY_RIGHT, "TurnRight");
+    
     inputSystem.bindKey(KEY_E, "StartUnloading");
     inputSystem.bindKey(KEY_Q, "Maintenance");
     inputSystem.bindKey(KEY_ESC, "EmergencyStop");
@@ -92,6 +96,17 @@ std::vector<int> MachineController::getPressedKeys() const {
 }
 
 // Обработчики действий
+void MachineController::onStartStop(bool pressed) {
+    if (pressed) {
+        if (machine->isRunning()) {
+            machine->stop();
+        }
+        else {
+            machine->start();
+        }
+    }
+}
+
 void MachineController::onMoveForward(bool pressed) {
     machine->setMovementDirection(MovementDirection::FORWARD, pressed);
 }

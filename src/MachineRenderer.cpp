@@ -40,11 +40,11 @@ void MachineRenderer::createUI(int width, int height) {
 
 void MachineRenderer::createMachineVisual() {
     sweeperWidget = new SweeperWidget(175, 175, 50, 50);
-    sweeperWidget->setColor(FL_BLUE);
+    sweeperWidget->setColor(FL_WHITE);
 }
 
 void MachineRenderer::createStatusPanel() {
-    statusLabel = new Fl_Box(400, 50, 200, 30, "Status: IDLE");
+    statusLabel = new Fl_Box(400, 50, 200, 30, "Status: NONE");
     statusLabel->align(FL_ALIGN_LEFT | FL_ALIGN_INSIDE);
     
     fuelLabel = new Fl_Box(400, 90, 200, 30, "Fuel: 100%");
@@ -103,7 +103,7 @@ void MachineRenderer::refreshUI() {
 
 Fl_Color MachineRenderer::getStateColor(SweeperState state) const {
     switch (state) {
-        case SweeperState::IDLE: return FL_BLACK;
+        case SweeperState::ACTIVATED: return FL_BLACK;
         case SweeperState::MOVING: {
             MovementDirection dir = machine->getMovementDirection();
             if (hasDirection(dir, MovementDirection::FORWARD))
@@ -111,7 +111,6 @@ Fl_Color MachineRenderer::getStateColor(SweeperState state) const {
             if (hasDirection(dir, MovementDirection::BACKWARD))
                 return FL_RED;
         };
-        case SweeperState::UNLOADING: return FL_CYAN;
         case SweeperState::BROKEN: return FL_YELLOW;
         default: return FL_WHITE;
     }

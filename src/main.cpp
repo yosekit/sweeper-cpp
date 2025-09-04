@@ -26,19 +26,12 @@ int main(int argc, char **argv) {
     auto renderer = std::make_shared<MachineRenderer>(machine);
     renderer->createUI(800, 600);
     
-    // Настраиваем callbacks
-    // controller->setupWindowCallbacks(renderer->getWindow());
-    
-    // Запускаем машину
-    machine->start();
-    
     // Показываем окно
     renderer->getWindow()->show();
     
     // Главный цикл симуляции
     while (renderer->getWindow()->shown()) {
         Fl::check(); // Обрабатываем события FLTK
-    
 
         // Обновляем машину
         machine->update(0.016f); // ~60 FPS

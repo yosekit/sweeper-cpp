@@ -13,14 +13,14 @@
 // Базовые состояния (флаги)
 enum class SweeperState : uint32_t {
     NONE        = 0,        // Нет состояния
-    IDLE        = 1 << 0,   // 1 - Простой
-    MOVING      = 1 << 1,   // 2 - Движение
-    SWEEPING    = 1 << 2,   // 4 - Подметание
-    WASHING     = 1 << 3,   // 8 - Мойка
-    UNLOADING   = 1 << 4,   // 16 - Разгрузка
-    MAINTENANCE = 1 << 5,   // 32 - Техобслуживание
-    BROKEN      = 1 << 6,   // 64 - Поломка
-    EMERGENCY   = 1 << 7    // 128 - Аварийный режим
+    DISABLED    = 1 << 0,   // Отключен
+    ACTIVATED   = 1 << 1,   // Заведен
+    MOVING      = 1 << 2,   // Движение
+    SWEEPING    = 1 << 3,   // Подметание
+    WASHING     = 1 << 4,   // Мойка
+    MAINTENANCE = 1 << 5,   // Техобслуживание
+    BROKEN      = 1 << 6,   // Поломка
+    EMERGENCY   = 1 << 7    // Аварийный режим
 };
 
 // TODO Надо ли добавлять const enum
@@ -69,11 +69,11 @@ inline std::string sweeperStateToString(SweeperState state) {
     if (state == SweeperState::NONE) return "NONE";
     
     std::string result;
-    if (hasState(state, SweeperState::IDLE)) result += "IDLE|";
+    if (hasState(state, SweeperState::DISABLED)) result += "DISABLED|";
+    if (hasState(state, SweeperState::ACTIVATED)) result += "ACTIVATED|";
     if (hasState(state, SweeperState::MOVING)) result += "MOVING|";
     if (hasState(state, SweeperState::SWEEPING)) result += "SWEEPING|";
     if (hasState(state, SweeperState::WASHING)) result += "WASHING|";
-    if (hasState(state, SweeperState::UNLOADING)) result += "UNLOADING|";
     if (hasState(state, SweeperState::MAINTENANCE)) result += "MAINTENANCE|";
     if (hasState(state, SweeperState::BROKEN)) result += "BROKEN|";
     if (hasState(state, SweeperState::EMERGENCY)) result += "EMERGENCY|";

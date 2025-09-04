@@ -5,7 +5,7 @@
 
 Sweeper::Sweeper() {
     stateMachine = std::make_unique<StateMachine<SweeperState>>();
-    stateMachine->setInitialState(SweeperState::IDLE);
+    stateMachine->setInitialState(SweeperState::DISABLED);
     initializeTransitions();
 }
 
@@ -20,11 +20,13 @@ void Sweeper::initializeTransitions() {
     stateMachine->addTransition(SweeperState::NONE, SweeperState::BROKEN);
     stateMachine->addTransition(SweeperState::NONE, SweeperState::EMERGENCY);
     
-    // IDLE может переходить в MOVING, SWEEPING, WASHING, UNLOADING
-    stateMachine->addTransition(SweeperState::IDLE, SweeperState::MOVING);
-    stateMachine->addTransition(SweeperState::IDLE, SweeperState::SWEEPING);
-    stateMachine->addTransition(SweeperState::IDLE, SweeperState::WASHING);
-    stateMachine->addTransition(SweeperState::IDLE, SweeperState::UNLOADING);
+    stateMachine->addTransition(SweeperState::DISABLED, SweeperState::ACTIVATED);
+    stateMachine->addTransition(SweeperState::ACTIVATED, SweeperState::DISABLED);
+
+    // ACTIVATED может переходить в MOVING, SWEEPING, WASHING, UNLOADING
+    stateMachine->addTransition(SweeperState::ACTIVATED, SweeperState::MOVING);
+    stateMachine->addTransition(SweeperState::ACTIVATED, SweeperState::SWEEPING);
+    stateMachine->addTransition(SweeperState::ACTIVATED, SweeperState::WASHING);
     
     // MOVING может комбинироваться с SWEEPING и WASHING
     stateMachine->addTransition(SweeperState::MOVING, SweeperState::MOVING | SweeperState::SWEEPING);
@@ -36,14 +38,13 @@ void Sweeper::initializeTransitions() {
     // WASHING может комбинироваться с MOVING
     stateMachine->addTransition(SweeperState::WASHING, SweeperState::WASHING | SweeperState::MOVING);
     
-    // Из любого рабочего состояния можно вернуться в IDLE
-    stateMachine->addTransition(SweeperState::MOVING, SweeperState::IDLE);
-    stateMachine->addTransition(SweeperState::SWEEPING, SweeperState::IDLE);
-    stateMachine->addTransition(SweeperState::WASHING, SweeperState::IDLE);
-    stateMachine->addTransition(SweeperState::UNLOADING, SweeperState::IDLE);
+    // Из любого рабочего состояния можно вернуться в ACTIVATED
+    stateMachine->addTransition(SweeperState::MOVING, SweeperState::ACTIVATED);
+    stateMachine->addTransition(SweeperState::SWEEPING, SweeperState::ACTIVATED);
+    stateMachine->addTransition(SweeperState::WASHING, SweeperState::ACTIVATED);
     
     // UNLOADING требует остановки
-    // stateMachine->addTransition(SweeperState::UNLOADING, SweeperState::IDLE,
+    // stateMachine->addTransition(SweeperState::UNLOADING, SweeperState::ACTIVATED,
     //     [](SweeperState from, SweeperState to) {
     //         // Можно разгружаться только когда не движемся и не работают щетки
     //         return !hasState(from, SweeperState::MOVING) &&
@@ -86,11 +87,15 @@ MachineController* Sweeper::getController() const {
 }
 
 void Sweeper::start() {
-    std::cout << "Harvesting machine started" << std::endl;
+    if (stateMachine->transition(SweeperState::ACTIVATED)) {
+        std::cout << "Sweeper started" << std::endl;
+    }
 }
 
 void Sweeper::stop() {
-    std::cout << "Harvesting machine stopped" << std::endl;
+    if (stateMachine->transition(SweeperState::DISABLED)) {
+        std::cout << "Sweeper stopped" << std::endl;
+    }
 }
 
 void Sweeper::update(float deltaTime) {
@@ -106,6 +111,9 @@ void Sweeper::update(float deltaTime) {
 }
 
 void Sweeper::setMovementDirection(MovementDirection direction, bool enabled) {
+    SweeperState state = getCurrentState();
+    if (hasState(state, SweeperState::DISABLED)) return;
+
     MovementDirection newDirection = movementDirection;
 
     if (enabled) {
@@ -122,13 +130,12 @@ void Sweeper::setMovementDirection(MovementDirection direction, bool enabled) {
     }
 
     movementDirection = newDirection;
-    
-    SweeperState state = getCurrentState();
+
     if (movementDirection != MovementDirection::NONE && 
         !hasState(state, SweeperState::MOVING)) {
         stateMachine->transition(SweeperState::MOVING);
     } else if (movementDirection == MovementDirection::NONE) {
-        stateMachine->transition(SweeperState::IDLE);
+        stateMachine->transition(SweeperState::ACTIVATED);
     }
 }
 
@@ -170,10 +177,12 @@ inline bool Sweeper::isValidMovementDirection(MovementDirection direction) const
     return true;
 }
 
+bool Sweeper::isRunning() const {
+    return hasState(stateMachine->getCurrentState(), SweeperState::ACTIVATED);
+}
+
 bool Sweeper::isOperational() const {
-    return true; // TODO
-    SweeperState state = stateMachine->getCurrentState();
-    return hasState(state, SweeperState::BROKEN);
+    return !hasState(stateMachine->getCurrentState(), SweeperState::BROKEN);
 }
 
 float Sweeper::calculateLinearSpeed() const {

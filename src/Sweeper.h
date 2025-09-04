@@ -40,6 +40,7 @@ public:
     double getFuelLevel() const { return fuelLevel; }
     double getBatteryLevel() const { return batteryLevel; }
 
+    bool isRunning() const;
     bool isOperational() const;
 
     void setRenderer(std::shared_ptr<MachineRenderer> renderer);

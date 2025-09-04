@@ -29,6 +29,10 @@ public:
     }
 
     bool transition(const State& newState) {
+        if (newState == currentState) {
+            return false;
+        }
+
         const Transition* transition = findTransition(currentState, newState);
         
         if (transition) {
